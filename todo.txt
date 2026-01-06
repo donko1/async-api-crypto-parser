@@ -1,0 +1,1 @@
+1. Make base_dir and file_path as global values, not local(mb thru settings or env)
