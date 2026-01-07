@@ -8,7 +8,7 @@ json_path = os.path.join(base_dir, "json_cache", f"json_coins.json")
 
 
 def get_values_from_html_to_dict(filepath=html_path):
-    with open(html_path) as f:
+    with open(filepath) as f:
         html = f.read()
 
     tree = HTMLParser(html)
