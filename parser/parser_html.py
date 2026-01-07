@@ -1,13 +1,10 @@
 import json
 from selectolax.parser import HTMLParser
 import os
-
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-html_path = os.path.join(base_dir, "html_cache", f"html_cache.html")
-json_path = os.path.join(base_dir, "json_cache", f"json_coins.json")
+from config.settings import config
 
 
-def get_values_from_html_to_dict(filepath=html_path):
+def get_values_from_html_to_dict(filepath=config.HTML_PATH):
     with open(filepath) as f:
         html = f.read()
 
@@ -30,7 +27,7 @@ def get_values_from_html_to_dict(filepath=html_path):
     return out
 
 
-def save_values_to_json(data, filepath=json_path):
+def save_values_to_json(data, filepath=config.JSON_PATH):
     with open(filepath, "w") as f:
         json.dump(data, f)
 

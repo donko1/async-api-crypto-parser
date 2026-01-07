@@ -2,3 +2,4 @@ venv
 html_cache/*
 json_cache/*
 .env
+__pycache__

@@ -1,23 +1,18 @@
 import asyncio
 import aiofiles
 import aiohttp
-import os
-
-main = __name__ == "__main__"
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-html_path = os.path.join(base_dir, "html_cache", f"html_cache.html")
+from config.settings import config
 
 
-async def get_html_for_top_100():
+async def get_html_for_top_100(filepath=config.HTML_PATH):
     async with aiohttp.ClientSession() as session:
         async with session.get(
             "https://coinmarketcap.com/coins/",
             headers={"User-Agent": "Mozilla/5.0"},
         ) as resp:
-            if main:
-                print("Status:", resp.status)
+            print("Status:", resp.status)
             html = await resp.text()
-            async with aiofiles.open(html_path, "w") as f:
+            async with aiofiles.open(filepath, "w") as f:
                 await f.write(html)
 
 
@@ -25,5 +20,5 @@ async def test():
     await get_html_for_top_100()
 
 
-if main:
+if __name__ == "__main__":
     asyncio.run(test())

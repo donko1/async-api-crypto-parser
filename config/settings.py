@@ -13,6 +13,8 @@ class Config:
     LOG_LEVEL: str
     LOG_FILE: bool
     LOG_TERMINAL: bool
+    HTML_PATH: str
+    JSON_PATH: str
 
     @classmethod
     def load(cls) -> "Config":
@@ -23,11 +25,19 @@ class Config:
         if missing:
             raise ValueError(f"Missing requires env params: {missing}")
 
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
         return cls(
             DEBUG=os.getenv("DEBUG").lower() == "true",
             LOG_LEVEL=os.getenv("LOG_LEVEL", "INFO"),
             LOG_FILE=os.getenv("LOG_FILE", "True").lower() == "true",
             LOG_TERMINAL=os.getenv("LOG_TERMINAL", "True").lower() == "true",
+            HTML_PATH=os.path.join(
+                base_dir, "html_cache", os.getenv("HTML_PATH", "html_cache.html")
+            ),
+            JSON_PATH=os.path.join(
+                base_dir, "json_cache", os.getenv("JSON_PATH", "json_coins.json")
+            ),
         )
 
     def log_config(self):
