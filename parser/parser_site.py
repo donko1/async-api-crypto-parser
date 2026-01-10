@@ -17,10 +17,12 @@ async def get_html_for_top_100(filepath=config.HTML_PATH):
             html = await resp.text()
             async with aiofiles.open(filepath, "w") as f:
                 await f.write(html)
+            logger.info("Ending writing html_file")
 
 
 async def test():
     await get_html_for_top_100()
+    logger.info("Successfully tested!")
 
 
 if __name__ == "__main__":

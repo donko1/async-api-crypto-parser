@@ -42,7 +42,6 @@ class Config:
 
     def log_config(self):
         """Security logging config (only public data)"""
-        # TODO: make it with logger from core
         safe_config = {
             "DEBUG": self.DEBUG,
             "LOG_LEVEL": self.LOG_LEVEL,
