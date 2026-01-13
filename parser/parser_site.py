@@ -22,7 +22,7 @@ async def get_html_for_top_100(filepath=config.HTML_PATH):
 
 async def test():
     await get_html_for_top_100()
-    logger.info("Successfully tested!")
+    logger.info("Successfully downloaded with no errors!")
 
 
 if __name__ == "__main__":
