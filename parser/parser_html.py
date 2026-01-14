@@ -40,7 +40,7 @@ def save_values_to_json(data, filepath=config.JSON_PATH):
 
 def main():
     save_values_to_json(get_values_from_html_to_dict())
-    logger.info("Successfully tested!")
+    logger.info("Successfully saved data to json file!")
 
 
 if __name__ == "__main__":
