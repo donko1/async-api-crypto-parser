@@ -14,6 +14,7 @@ def test_parse_html_to_dict_with_p():
 
     assert "BTC" in result
     assert result["BTC"]["name"].lower().startswith("bitcoin")
+    assert isinstance(result["BTC"]["price"], float)
 
 
 def test_parse_html_to_dict_with_span():
@@ -26,6 +27,7 @@ def test_parse_html_to_dict_with_span():
 
     assert "BTC" in result
     assert result["BTC"]["name"].lower().startswith("bitcoin")
+    assert isinstance(result["BTC"]["price"], float)
 
 
 def test_parse_html_to_dict_combination():
@@ -38,6 +40,7 @@ def test_parse_html_to_dict_combination():
 
     assert "AAPL" in result
     assert result["AAPL"]["name"].lower().startswith("apple")
+    assert isinstance(result["AAPL"]["price"], float)
 
 
 def test_save_values_to_json(tmp_path):

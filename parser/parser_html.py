@@ -24,8 +24,7 @@ def get_values_from_html_to_dict(filepath=config.HTML_PATH):
         except IndexError:
             name = f"{tr.css('td')[2].css("p")[0].text()}"
             ticker = f"{tr.css('td')[2].css("p")[1].text()}"
-        price = f"{tr.css('td')[3].text().replace("$", "").replace(",", ".")}"
-
+        price = float(f"{(tr.css('td')[3].text().replace("$", "").replace(",", ""))}")
         out[ticker] = {"ticker": ticker, "price": price, "name": name, "id": i}
 
     return out
