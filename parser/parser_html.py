@@ -25,7 +25,17 @@ def get_values_from_html_to_dict(filepath=config.HTML_PATH):
             name = f"{tr.css('td')[2].css("p")[0].text()}"
             ticker = f"{tr.css('td')[2].css("p")[1].text()}"
         price = float(f"{(tr.css('td')[3].text().replace("$", "").replace(",", ""))}")
-        out[ticker] = {"ticker": ticker, "price": price, "name": name, "id": i}
+        try:
+            icon = tr.css("img.coin-logo")[0].attributes.get("src")
+        except:
+            icon = ""
+        out[ticker] = {
+            "ticker": ticker,
+            "price": price,
+            "name": name,
+            "icon": icon,
+            "id": i,
+        }
 
     return out
 

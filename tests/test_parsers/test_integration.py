@@ -1,4 +1,5 @@
 import json
+import aiohttp
 import pytest
 
 from parser.parser_html import get_values_from_html_to_dict, save_values_to_json
@@ -21,3 +22,11 @@ async def test_full_parsing_pipeline(tmp_path):
 
     assert len(data) == 100
     assert data["BTC"]["name"].lower().startswith("bitcoin")
+
+    # Testing if icon currently founded and working
+    url_of_icon = data["BTC"]["icon"]
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url_of_icon) as response:
+            assert response.status == 200
+            content_type = response.headers.get("Content-Type", "").lower()
+            assert "image/png" in content_type
