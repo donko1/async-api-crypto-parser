@@ -1,6 +1,6 @@
 import pytest
 
-from parser.parser_site import get_html_for_top_100
+from parser.parser_site import get_html_for_top_100, get_html_by_playwright
 
 
 @pytest.mark.network
@@ -28,3 +28,22 @@ async def test_non_blocked_html(tmp_path):
     assert "are you a robot" not in content.lower()
     assert "forbidden" not in content.lower()
     assert "bitcoin" in content.lower()  # A keyword expected to be on the page
+    assert "btc logo" in content.lower()
+
+
+@pytest.mark.asyncio
+@pytest.mark.network
+async def test_get_full_html_file(tmp_path):
+    """Tests that get full html_file with playwright is working"""
+    file_path = tmp_path / "site.html"
+
+    await get_html_by_playwright(filepath=str(file_path))
+
+    content = file_path.read_text()
+
+    assert "access to this site is denied" not in content.lower()
+    assert "are you a robot" not in content.lower()
+    assert "forbidden" not in content.lower()
+    assert "bitcoin" in content.lower()  # A keyword expected to be on the page
+    assert "btc logo" in content.lower()
+    assert "pi logo" in content.lower()
