@@ -1,7 +1,11 @@
 import json
 from pathlib import Path
 
-from parser.parser_html import get_values_from_html_to_dict, save_values_to_json
+from parser.parser_html import (
+    get_values_from_html_to_dict,
+    save_values_to_json,
+    parse_icons,
+)
 
 
 def test_parse_html_to_dict_with_p():
@@ -56,3 +60,14 @@ def test_save_values_to_json(tmp_path):
         d = json.load(f)
 
     assert d == test_dict
+
+
+def test_parse_icons():
+    html_path = Path(__file__).parent.parent / "fixtures" / "combination_values.html"
+
+    result = parse_icons(filepath=html_path)
+
+    assert "META" not in result
+    assert "NVDA" in result
+    assert len(result) == 6
+    assert result["TSLA"] == "https://example.com/"

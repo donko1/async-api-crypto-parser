@@ -40,6 +40,31 @@ def get_values_from_html_to_dict(filepath=config.HTML_PATH):
     return out
 
 
+def parse_icons(filepath=config.HTML_PATH):
+    with open(filepath) as f:
+        html = f.read()
+
+    tree = HTMLParser(html)
+    trs = tree.css("tr")[2::]
+
+    out = {}
+
+    logger.info(f"Found {len(trs)} tr's...")
+
+    for tr in trs:
+        try:
+            ticker = f"{tr.css('td')[2].css("span")[2].text()}"
+        except IndexError:
+            ticker = f"{tr.css('td')[2].css("p")[1].text()}"
+        try:
+            icon = tr.css("img.coin-logo")[0].attributes.get("src")
+            out[ticker] = icon
+        except:
+            continue
+
+    return out
+
+
 def save_values_to_json(data, filepath=config.JSON_PATH):
     logger.info("opening json file...")
     with open(filepath, "w") as f:

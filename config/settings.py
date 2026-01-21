@@ -15,6 +15,7 @@ class Config:
     LOG_TERMINAL: bool
     HTML_PATH: str
     JSON_PATH: str
+    ICONS: str
 
     @classmethod
     def load(cls) -> "Config":
@@ -37,6 +38,9 @@ class Config:
             ),
             JSON_PATH=os.path.join(
                 base_dir, "json_cache", os.getenv("JSON_PATH", "json_coins.json")
+            ),
+            ICONS=os.path.join(
+                base_dir, "json_cache", os.getenv("ICONS", "icons.json")
             ),
         )
 
