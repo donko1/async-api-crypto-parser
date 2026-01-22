@@ -50,7 +50,8 @@ async def get_html_by_playwright(filepath=config.HTML_PATH):
 
 
 async def test():
-    await get_html_by_playwright()
+    # await get_html_by_playwright()
+    await get_html_for_top_100()
     logger.info("Successfully downloaded with no errors!")
 
 

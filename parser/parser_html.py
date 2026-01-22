@@ -6,7 +6,9 @@ from core.logger import get_logger
 logger = get_logger("parser_html")
 
 
-def get_values_from_html_to_dict(filepath=config.HTML_PATH):
+def get_values_from_html_to_dict(
+    filepath=config.HTML_PATH, parse_icons_from_file=False, icons_path=config.ICONS
+):
     with open(filepath) as f:
         html = f.read()
 
@@ -17,6 +19,10 @@ def get_values_from_html_to_dict(filepath=config.HTML_PATH):
 
     logger.info(f"Found {len(trs)} tr's...")
 
+    if parse_icons_from_file:
+        with open(icons_path) as f:
+            icons = json.load(f)
+
     for i, tr in enumerate(trs):
         try:
             name = f"{tr.css('td')[2].css("span")[1].text()}"
@@ -25,10 +31,18 @@ def get_values_from_html_to_dict(filepath=config.HTML_PATH):
             name = f"{tr.css('td')[2].css("p")[0].text()}"
             ticker = f"{tr.css('td')[2].css("p")[1].text()}"
         price = float(f"{(tr.css('td')[3].text().replace("$", "").replace(",", ""))}")
-        try:
-            icon = tr.css("img.coin-logo")[0].attributes.get("src")
-        except:
-            icon = ""
+        if parse_icons_from_file:
+            try:
+                icon = icons[ticker]
+            except:
+                icon = ""
+
+        else:
+            try:
+                icon = tr.css("img.coin-logo")[0].attributes.get("src")
+            except:
+                icon = ""
+
         out[ticker] = {
             "ticker": ticker,
             "price": price,
@@ -73,7 +87,7 @@ def save_values_to_json(data, filepath=config.JSON_PATH):
 
 
 def main():
-    save_values_to_json(get_values_from_html_to_dict())
+    save_values_to_json(get_values_from_html_to_dict(parse_icons_from_file=True))
     logger.info("Successfully saved data to json file!")
 
 
