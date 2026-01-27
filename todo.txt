@@ -1,1 +1,2 @@
-1. Make logos for every token(idk how i must do it XD)
+1. Make auto update icons in marketDataService
+2. Add logger to force_parse

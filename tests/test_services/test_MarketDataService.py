@@ -1,5 +1,4 @@
 import json
-import aiofiles
 import pytest
 from services.MarketDataService import MarketDataService
 
@@ -23,3 +22,24 @@ async def test_force_update_icons(tmp_path):
     assert "BTC" in out
     assert "NVDA" not in out
     assert len(out) == 100
+
+
+@pytest.mark.asyncio
+@pytest.mark.network
+async def test_force_parse(tmp_path):
+    """Tests that force_parse writes current data in json"""
+
+    json_path = tmp_path / "json.json"
+
+    Service = MarketDataService()
+
+    await Service.force_parse(json_path)
+
+    with open(json_path) as f:
+        out = json.load(f)
+
+    assert len(out) == 100
+    assert "BTC" in out.keys()
+    for key in ["price", "id", "icon"]:
+        assert key in out["BTC"].keys()
+    assert isinstance(out["BTC"]["price"], float)
