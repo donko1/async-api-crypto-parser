@@ -1,3 +1,7 @@
+import asyncio
+from datetime import datetime, timedelta
+
+from redis.asyncio import Redis
 from config.settings import Config
 from parser.parser_html import (
     get_values_from_html_to_dict,
@@ -15,6 +19,12 @@ class MarketDataService:
         if config is None:
             config = Config.load()
         self.config = config
+        self.redis = Redis(
+            host=self.config.REDIS_HOST,
+            port=self.config.REDIS_PORT,
+            db=0,
+            decode_responses=True,
+        )
 
     async def force_update_icons(self, html_path=None, json_path=None):
         """Forcing updating icons. Downloading page with playwright and save icons to json_path"""
@@ -29,6 +39,12 @@ class MarketDataService:
 
         logger.info("Parsing and saving icons...")
         icons_json = parse_icons(filepath=html_path)
+        if self.config.ICONS_BY_TIME_UPDATE:
+            logger.info("Writing update time in redis...")
+            await self.redis.set(
+                "icons:update_lock", 1, ex=self.config.ICONS_STORAGE_SECONDS, nx=True
+            )
+
         save_values_to_json(icons_json, json_path)
         logger.info("Updating icons was completed successfully")
 
@@ -37,9 +53,22 @@ class MarketDataService:
         if json_path is None:
             json_path = self.config.JSON_PATH
 
-        # Here u wright icon tester
+        if self.config.ICONS_BY_TIME_UPDATE:
+            logger.info("Check if needed update icons...")
+            if not await self.redis.exists("icons:update_lock"):
+                logger.info("Updating icons...")
+                await self.force_update_icons()
 
         await get_html_for_top_100()
         save_values_to_json(
             get_values_from_html_to_dict(parse_icons_from_file=True), filepath=json_path
         )
+
+
+async def main():
+    service = MarketDataService()
+    await service.force_parse()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

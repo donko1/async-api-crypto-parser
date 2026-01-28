@@ -16,6 +16,10 @@ class Config:
     HTML_PATH: str
     JSON_PATH: str
     ICONS: str
+    ICONS_BY_TIME_UPDATE: bool
+    ICONS_STORAGE_SECONDS: int
+    REDIS_HOST: str
+    REDIS_PORT: int
 
     @classmethod
     def load(cls) -> "Config":
@@ -42,6 +46,13 @@ class Config:
             ICONS=os.path.join(
                 base_dir, "json_cache", os.getenv("ICONS", "icons.json")
             ),
+            ICONS_BY_TIME_UPDATE=os.getenv("ICONS_BY_TIME_UPDATE", "False").lower()
+            == "true",
+            ICONS_STORAGE_SECONDS=int(os.getenv("ICONS_STORAGE_SECONDS", "3600")),
+            REDIS_HOST=os.getenv("REDIS_HOST", "localhost"),
+            REDIS_PORT=int(
+                os.getenv("REDIS_PORT", "6379"),
+            ),
         )
 
     def log_config(self):
@@ -51,6 +62,8 @@ class Config:
             "LOG_LEVEL": self.LOG_LEVEL,
             "LOG_FILE": self.LOG_FILE,
             "LOG_TERMINAL": self.LOG_TERMINAL,
+            "ICONS_BY_TIME_UPDATE": self.ICONS_BY_TIME_UPDATE,
+            "ICONS_STORAGE_SECONDS": self.ICONS_STORAGE_SECONDS,
         }
         print(f"App config loaded: {safe_config}")
 
