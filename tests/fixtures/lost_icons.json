@@ -1,0 +1,72 @@
+{
+  "SOL": {
+    "ticker": "SOL",
+    "price": 126.55,
+    "name": "Solana",
+    "icon": "https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png",
+    "id": 1
+  },
+  "BTC": {
+    "ticker": "BTC",
+    "price": 58234.1,
+    "name": "Bitcoin",
+    "icon": "",
+    "id": 2
+  },
+  "ETH": {
+    "ticker": "ETH",
+    "price": 3150.75,
+    "name": "Ethereum",
+    "icon": "http://example.com",
+    "id": 3
+  },
+  "BNB": {
+    "ticker": "BNB",
+    "price": 545.2,
+    "name": "Binance Coin",
+    "icon": "http://example.com",
+    "id": 4
+  },
+  "XRP": {
+    "ticker": "XRP",
+    "price": 0.52,
+    "name": "Ripple",
+    "icon": "",
+    "id": 5
+  },
+  "ADA": {
+    "ticker": "ADA",
+    "price": 0.45,
+    "name": "Cardano",
+    "icon": "http://example.com",
+    "id": 6
+  },
+  "DOGE": {
+    "ticker": "DOGE",
+    "price": 0.12,
+    "name": "Dogecoin",
+    "icon": "http://example.com",
+    "id": 7
+  },
+  "DOT": {
+    "ticker": "DOT",
+    "price": 6.8,
+    "name": "Polkadot",
+    "icon": "",
+    "id": 8
+  },
+  "AVAX": {
+    "ticker": "AVAX",
+    "price": 34.25,
+    "name": "Avalanche",
+    "icon": "http://example.com",
+    "id": 9
+  },
+  "MATIC": {
+    "ticker": "MATIC",
+    "price": 0.78,
+    "name": "Polygon",
+    "icon": "http://example.com",
+    "id": 10
+  }
+}

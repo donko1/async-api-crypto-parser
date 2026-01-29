@@ -86,6 +86,18 @@ def save_values_to_json(data, filepath=config.JSON_PATH):
     logger.info("closing json file...")
 
 
+def lost_icons(filepath=config.JSON_PATH):
+    logger.info("opening json file...")
+    with open(filepath) as f:
+        data = json.load(f)
+    logger.info("closing json file...")
+    count = 0
+    for item in data.values():
+        if not item["icon"]:
+            count += 1
+    return count
+
+
 def main():
     save_values_to_json(get_values_from_html_to_dict(parse_icons_from_file=True))
     logger.info("Successfully saved data to json file!")
