@@ -5,7 +5,7 @@ from parser.parser_html import (
     get_values_from_html_to_dict,
     save_values_to_json,
     parse_icons,
-    lost_icons,
+    lost_icons_count,
 )
 
 
@@ -77,6 +77,6 @@ def test_parse_icons():
 def test_lost_icons():
     html_path = Path(__file__).parent.parent / "fixtures" / "lost_icons.json"
 
-    result = lost_icons(filepath=html_path)
+    result = lost_icons_count(filepath=html_path)
 
     assert 3 == result

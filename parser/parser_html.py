@@ -86,7 +86,7 @@ def save_values_to_json(data, filepath=config.JSON_PATH):
     logger.info("closing json file...")
 
 
-def lost_icons(filepath=config.JSON_PATH):
+def lost_icons_count(filepath=config.JSON_PATH):
     logger.info("opening json file...")
     with open(filepath) as f:
         data = json.load(f)
