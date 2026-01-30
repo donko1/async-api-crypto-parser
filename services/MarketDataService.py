@@ -1,10 +1,12 @@
 import asyncio
 from datetime import datetime, timedelta
+import os
 
 from redis.asyncio import Redis
 from config.settings import Config
 from parser.parser_html import (
     get_values_from_html_to_dict,
+    lost_icons_count,
     parse_icons,
     save_values_to_json,
 )
@@ -25,6 +27,7 @@ class MarketDataService:
             db=0,
             decode_responses=True,
         )
+        self.ICONS_UPDATE_LOCK_KEY = "icons:update_lock"
 
     async def force_update_icons(self, html_path=None, json_path=None):
         """Forcing updating icons. Downloading page with playwright and save icons to json_path"""
@@ -42,7 +45,10 @@ class MarketDataService:
         if self.config.ICONS_BY_TIME_UPDATE:
             logger.info("Writing update time in redis...")
             await self.redis.set(
-                "icons:update_lock", 1, ex=self.config.ICONS_STORAGE_SECONDS, nx=True
+                self.ICONS_UPDATE_LOCK_KEY,
+                1,
+                ex=self.config.ICONS_STORAGE_SECONDS,
+                nx=True,
             )
 
         save_values_to_json(icons_json, json_path)
@@ -53,10 +59,15 @@ class MarketDataService:
         if json_path is None:
             json_path = self.config.JSON_PATH
 
+        logger.info("Check if needed update icons...")
         if self.config.ICONS_BY_TIME_UPDATE:
-            logger.info("Check if needed update icons...")
-            if not await self.redis.exists("icons:update_lock"):
-                logger.info("Updating icons...")
+            if not await self.redis.exists(self.ICONS_UPDATE_LOCK_KEY):
+                logger.info("Updating icons because they expired...")
+                await self.force_update_icons()
+
+        if os.path.exists(json_path):
+            if lost_icons_count(json_path) >= self.config.MINIMUM_LOST_ICONS:
+                logger.info("Updating icons because too many lost...")
                 await self.force_update_icons()
 
         await get_html_for_top_100()

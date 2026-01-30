@@ -1,2 +1,2 @@
-1. Make auto update icons in marketDataService
-2. Add logger to force_parse
+1. Add autoupdate by no icons
+2. Add shutdown hook

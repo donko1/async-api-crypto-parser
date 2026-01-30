@@ -1,4 +1,5 @@
 import json
+import os
 from selectolax.parser import HTMLParser
 from config.settings import config
 from core.logger import get_logger
@@ -19,7 +20,7 @@ def get_values_from_html_to_dict(
 
     logger.info(f"Found {len(trs)} tr's...")
 
-    if parse_icons_from_file:
+    if parse_icons_from_file and os.path.exists(icons_path):
         with open(icons_path) as f:
             icons = json.load(f)
 

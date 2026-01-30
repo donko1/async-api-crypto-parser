@@ -18,6 +18,7 @@ class Config:
     ICONS: str
     ICONS_BY_TIME_UPDATE: bool
     ICONS_STORAGE_SECONDS: int
+    MINIMUM_LOST_ICONS: int
     REDIS_HOST: str
     REDIS_PORT: int
 
@@ -49,6 +50,7 @@ class Config:
             ICONS_BY_TIME_UPDATE=os.getenv("ICONS_BY_TIME_UPDATE", "False").lower()
             == "true",
             ICONS_STORAGE_SECONDS=int(os.getenv("ICONS_STORAGE_SECONDS", "3600")),
+            MINIMUM_LOST_ICONS=int(os.getenv("MINIMUM_LOST_ICONS", "5")),
             REDIS_HOST=os.getenv("REDIS_HOST", "localhost"),
             REDIS_PORT=int(
                 os.getenv("REDIS_PORT", "6379"),
@@ -64,6 +66,7 @@ class Config:
             "LOG_TERMINAL": self.LOG_TERMINAL,
             "ICONS_BY_TIME_UPDATE": self.ICONS_BY_TIME_UPDATE,
             "ICONS_STORAGE_SECONDS": self.ICONS_STORAGE_SECONDS,
+            "MINIMUM_LOST_ICONS": self.MINIMUM_LOST_ICONS,
         }
         print(f"App config loaded: {safe_config}")
 
