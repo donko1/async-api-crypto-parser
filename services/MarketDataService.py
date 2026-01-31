@@ -29,6 +29,27 @@ class MarketDataService:
         )
         self.ICONS_UPDATE_LOCK_KEY = "icons:update_lock"
 
+    async def _should_update_icons_by_time(self) -> bool:
+        """Returns if need update icons by time"""
+        if self.config.ICONS_BY_TIME_UPDATE:
+            if not await self.redis.exists(self.ICONS_UPDATE_LOCK_KEY):
+                logger.info("_should_update_icons_by_time returns True...")
+                return True
+        return False
+
+    def _should_update_by_lost_icons(self, json_path=None) -> bool:
+        """Returns if need update icons by too many lost"""
+        if json_path is None:
+            json_path = self.config.ICONS
+        if os.path.exists(json_path):
+            if lost_icons_count(json_path) >= self.config.MINIMUM_LOST_ICONS:
+                logger.info("_should_update_by_lost_icons returns True...")
+                return True
+        else:
+            return True
+
+        return False
+
     async def force_update_icons(self, html_path=None, json_path=None):
         """Forcing updating icons. Downloading page with playwright and save icons to json_path"""
         if html_path is None:
@@ -60,15 +81,12 @@ class MarketDataService:
             json_path = self.config.JSON_PATH
 
         logger.info("Check if needed update icons...")
-        if self.config.ICONS_BY_TIME_UPDATE:
-            if not await self.redis.exists(self.ICONS_UPDATE_LOCK_KEY):
-                logger.info("Updating icons because they expired...")
-                await self.force_update_icons()
+        should_update_by_time = await self._should_update_icons_by_time()
 
-        if os.path.exists(json_path):
-            if lost_icons_count(json_path) >= self.config.MINIMUM_LOST_ICONS:
-                logger.info("Updating icons because too many lost...")
-                await self.force_update_icons()
+        if should_update_by_time or self._should_update_by_lost_icons(
+            json_path=json_path
+        ):
+            await self.force_update_icons()
 
         await get_html_for_top_100()
         save_values_to_json(
