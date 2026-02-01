@@ -1,6 +1,6 @@
 import json
 import pytest
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, patch
 from services.MarketDataService import MarketDataService
 
 
@@ -110,3 +110,22 @@ def test_should_update_by_lost_doesnt_fail(monkeypatch):
     result = service._should_update_by_lost_icons("dumb_path")
 
     assert result is True
+
+
+@pytest.mark.asyncio
+async def test_test_connection():
+    service = MarketDataService()
+
+    mock_response = AsyncMock()
+
+    mock_response.status = 200
+    with patch("aiohttp.ClientSession.get") as mock_get:
+        mock_get.return_value.__aenter__.return_value = mock_response
+        result = await service.test_connection()
+        assert result is True
+
+    mock_response.status = 500
+    with patch("aiohttp.ClientSession.get") as mock_get:
+        mock_get.return_value.__aenter__.return_value = mock_response
+        result = await service.test_connection()
+        assert result is False

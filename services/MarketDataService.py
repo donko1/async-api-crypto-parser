@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime, timedelta
 import os
 
+import aiohttp
 from redis.asyncio import Redis
 from config.settings import Config
 from parser.parser_html import (
@@ -49,6 +50,12 @@ class MarketDataService:
             return True
 
         return False
+
+    async def test_connection(self) -> bool:
+        """Returns true if connection is works and false if not"""
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://coinmarketcap.com/coins/") as response:
+                return response.status == 200
 
     async def force_update_icons(self, html_path=None, json_path=None):
         """Forcing updating icons. Downloading page with playwright and save icons to json_path"""
