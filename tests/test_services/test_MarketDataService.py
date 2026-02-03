@@ -1,4 +1,7 @@
+import asyncio
 import json
+import time
+import playwright
 import pytest
 from unittest.mock import AsyncMock, Mock, patch
 from services.MarketDataService import MarketDataService
@@ -129,3 +132,27 @@ async def test_test_connection():
         mock_get.return_value.__aenter__.return_value = mock_response
         result = await service.test_connection()
         assert result is False
+
+
+@pytest.mark.asyncio
+async def test_estimate_parse_time(monkeypatch):
+    service = MarketDataService()
+
+    async def playwright_mock():
+        await asyncio.sleep(7.5)
+        return 200
+
+    async def aiohttp_mock():
+        await asyncio.sleep(1.5)
+        return 200
+
+    monkeypatch.setattr(service, "_playwright_request", playwright_mock)
+    monkeypatch.setattr(service, "_aiohttp_request", aiohttp_mock)
+
+    result = await service.estimate_parse_time()
+
+    assert result["playwright"]["status"] == 200
+    assert result["aiohttp"]["status"] == 200
+
+    assert 7.3 <= result["playwright"]["duration"] <= 7.7
+    assert 1.3 <= result["aiohttp"]["duration"] <= 1.7

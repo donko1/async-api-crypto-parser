@@ -1,8 +1,11 @@
 import asyncio
 from datetime import datetime, timedelta
 import os
+import time
 
 import aiohttp
+import playwright
+from playwright.async_api import async_playwright
 from redis.asyncio import Redis
 from config.settings import Config
 from parser.parser_html import (
@@ -57,6 +60,56 @@ class MarketDataService:
             async with session.get("https://coinmarketcap.com/coins/") as response:
                 return response.status == 200
 
+    async def _playwright_request(self):
+        async with async_playwright() as p:
+            browser = await p.chromium.launch()
+            page = await browser.new_page()
+            response = await page.goto(
+                "https://coinmarketcap.com/coins/", wait_until="domcontentloaded"
+            )
+            status = response.status
+            await browser.close()
+            return status
+
+    async def _aiohttp_request(self):
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://coinmarketcap.com/coins/") as response:
+                return response.status
+
+    async def estimate_parse_time(self) -> dict:
+        """Calculating how much need to connect with aiohttp and playwright
+        Returnable dict:
+        {
+        "playwright":
+            { "status": *status_code*,
+              "duration": *duration in seconds* },
+        "aiohttp":
+          { "status": *status_code*,
+          "duration": *duration in seconds* }
+        }"""
+        start = time.time()
+        status_playwright = await self._playwright_request()
+        time_playwright = time.time() - start
+
+        start = time.time()
+        status_aiohttp = await self._aiohttp_request()
+        time_aiohttp = time.time() - start
+
+        out = {
+            "playwright": {
+                "status": status_playwright,
+                "duration": time_playwright,
+            },
+            "aiohttp": {
+                "status": status_aiohttp,
+                "duration": time_aiohttp,
+            },
+        }
+
+        logger.info(out)
+
+        return out
+
     async def force_update_icons(self, html_path=None, json_path=None):
         """Forcing updating icons. Downloading page with playwright and save icons to json_path"""
         if html_path is None:
@@ -103,7 +156,7 @@ class MarketDataService:
 
 async def main():
     service = MarketDataService()
-    await service.force_parse()
+    await service.estimate_parse_time()
 
 
 if __name__ == "__main__":
