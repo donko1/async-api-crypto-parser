@@ -1,2 +1,2 @@
-1. Add autoupdate by no icons
-2. Add shutdown hook
+1. Add shutdown hook
+2. Add scheduler to MarketDataService

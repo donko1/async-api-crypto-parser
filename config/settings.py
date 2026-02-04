@@ -21,6 +21,7 @@ class Config:
     MINIMUM_LOST_ICONS: int
     REDIS_HOST: str
     REDIS_PORT: int
+    SCHEDULER_AUTOUPDATE_SECONDS: int
 
     @classmethod
     def load(cls) -> "Config":
@@ -55,6 +56,9 @@ class Config:
             REDIS_PORT=int(
                 os.getenv("REDIS_PORT", "6379"),
             ),
+            SCHEDULER_AUTOUPDATE_SECONDS=int(
+                os.getenv("SCHEDULER_AUTOUPDATE_SECONDS", "600")
+            ),
         )
 
     def log_config(self):
@@ -67,6 +71,7 @@ class Config:
             "ICONS_BY_TIME_UPDATE": self.ICONS_BY_TIME_UPDATE,
             "ICONS_STORAGE_SECONDS": self.ICONS_STORAGE_SECONDS,
             "MINIMUM_LOST_ICONS": self.MINIMUM_LOST_ICONS,
+            "SCHEDULER_AUTOUPDATE_SECONDS": self.SCHEDULER_AUTOUPDATE_SECONDS,
         }
         print(f"App config loaded: {safe_config}")
 
