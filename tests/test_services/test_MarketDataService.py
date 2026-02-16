@@ -1,9 +1,7 @@
 import asyncio
 import json
-import time
-import playwright
 import pytest
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import ANY, AsyncMock, MagicMock, Mock, patch
 from services.MarketDataService import MarketDataService
 
 
@@ -156,3 +154,182 @@ async def test_estimate_parse_time(monkeypatch):
 
     assert 7.3 <= result["playwright"]["duration"] <= 7.7
     assert 1.3 <= result["aiohttp"]["duration"] <= 1.7
+
+
+@pytest.mark.asyncio
+async def test_start_parsing_when_already_running(monkeypatch):
+    """Tests that start_parsing doesn't start if parsing is already running"""
+
+    # Arrange
+
+    service = MarketDataService()
+    service._is_running = True
+    mock_logger = Mock()
+
+    monkeypatch.setattr("services.MarketDataService.logger", mock_logger)
+
+    # Act
+
+    await service.start_parsing()
+
+    # Assert
+
+    mock_logger.warning.assert_called_once_with("MarketDataService is already running")
+
+
+@pytest.mark.asyncio
+async def test_start_parsing_with_custom_interval(monkeypatch):
+    """Tests that service starts parsing with a custom interval"""
+
+    # Arrange
+    service = MarketDataService()
+    service._is_running = False
+    service._stop_event = Mock()
+    service._run_periodically = AsyncMock()
+
+    mock_create_task = Mock()
+    mock_logger = Mock()
+
+    monkeypatch.setattr(asyncio, "create_task", mock_create_task)
+    monkeypatch.setattr("services.MarketDataService.logger", mock_logger)
+
+    custom_interval = 30.5
+
+    # Act
+    await service.start_parsing(seconds_parsing=custom_interval)
+
+    # Assert
+    assert service._is_running is True
+    service._stop_event.clear.assert_called_once()
+
+    service._run_periodically.assert_called_once_with(custom_interval)
+
+    mock_create_task.assert_called_once_with(
+        ANY,
+        name="MarketDataServiceTask_scheduler",
+    )
+
+    assert service._task == mock_create_task.return_value
+
+    mock_logger.info.assert_called_once_with(
+        "MarketDataService started with interval %s seconds",
+        custom_interval,
+    )
+
+
+@pytest.mark.asyncio
+async def test_stop_parsing_when_not_running(monkeypatch):
+    """Tests that stop_parsing doesn't stop if parsing is not running"""
+
+    # Arrange
+
+    service = MarketDataService()
+    service._is_running = False
+    mock_logger = Mock()
+
+    monkeypatch.setattr("services.MarketDataService.logger", mock_logger)
+
+    # Act
+
+    await service.stop_parsing()
+
+    # Assert
+
+    mock_logger.warning.assert_called_once_with("MarketDataService is not running")
+
+
+@pytest.mark.asyncio
+async def test_stop_parsing_when_running():
+    """Tests that stop_parsing stops the parsing task when it's running"""
+
+    # Arrange
+    service = MarketDataService()
+    service._is_running = True
+    service._stop_event = asyncio.Event()
+
+    task = asyncio.create_task(asyncio.sleep(10))
+    service._task = task
+
+    # Act
+    await service.stop_parsing()
+
+    # Assert
+
+    assert task.cancelled()
+    assert service._is_running is False
+    assert service._stop_event.is_set()
+
+
+@pytest.mark.asyncio
+async def test_run_run_periodically_will_not_run_if_stop_event():
+    """
+    Ensures that `_run_periodically` exits immediately and does not call
+    `force_parse` if `_stop_event` is already set before execution starts.
+
+    The service instance is created via `__new__` to avoid side effects
+    from `__init__` (e.g., external connections or event loop binding),
+    keeping the test fully isolated and deterministic.
+    """
+
+    # Arrange
+    service = MarketDataService.__new__(MarketDataService)
+    service._stop_event = asyncio.Event()
+    service._stop_event.set()
+    service.force_parse = Mock()
+
+    # Act
+    await service._run_periodically(seconds_parsing=5.0)
+
+    # Assert
+    service.force_parse.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_run_periodically_calls_force_parse_successfully(monkeypatch):
+    """
+    Ensures that _run_periodically calls force_parse and handles the loop correctly.
+    We monkeypatch the method to stop the loop after the first call.
+    """
+    # Arrange
+    service = MarketDataService()
+    service._stop_event = asyncio.Event()
+    mock_force_parse = AsyncMock()
+
+    async def side_effect():
+        service._stop_event.set()
+
+    mock_force_parse.side_effect = side_effect
+
+    monkeypatch.setattr(service, "force_parse", mock_force_parse)
+
+    # Act
+    await service._run_periodically(seconds_parsing=0.01)
+
+    # Assert
+    mock_force_parse.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_run_periodically_resilient_to_errors(monkeypatch):
+    """
+    Ensures the loop continues even if force_parse raises an exception.
+    """
+    # Arrange
+    service = MarketDataService()
+    service._stop_event = asyncio.Event()
+    mock_force_parse = AsyncMock()
+
+    async def mock_behavior():
+        if mock_force_parse.call_count == 1:
+            raise Exception("Parsing failed")
+        service._stop_event.set()
+        return None
+
+    mock_force_parse.side_effect = mock_behavior
+    monkeypatch.setattr(service, "force_parse", mock_force_parse)
+
+    # Act
+    await service._run_periodically(seconds_parsing=0.001)
+
+    # Assert
+    assert mock_force_parse.call_count == 2

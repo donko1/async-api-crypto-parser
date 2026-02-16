@@ -2,6 +2,8 @@ import asyncio
 from datetime import datetime, timedelta
 import os
 import time
+from types import NoneType
+from typing import Optional
 
 import aiohttp
 import playwright
@@ -31,7 +33,10 @@ class MarketDataService:
             db=0,
             decode_responses=True,
         )
+        self._task: Optional[asyncio.Task] = None
         self.ICONS_UPDATE_LOCK_KEY = "icons:update_lock"
+        self._is_running = False
+        self._stop_event = asyncio.Event()
 
     async def _should_update_icons_by_time(self) -> bool:
         """Returns if need update icons by time"""
@@ -153,10 +158,70 @@ class MarketDataService:
             get_values_from_html_to_dict(parse_icons_from_file=True), filepath=json_path
         )
 
+    async def start_parsing(self, seconds_parsing: float | NoneType = None) -> None:
+        """Starts parsing by scheduler"""
+        if self._is_running:
+            logger.warning("MarketDataService is already running")
+            return
+
+        if seconds_parsing is None:
+            seconds_parsing = self.config.SCHEDULER_AUTOUPDATE_SECONDS
+
+        self._is_running = True
+
+        self._stop_event.clear()
+
+        self._task = asyncio.create_task(
+            self._run_periodically(seconds_parsing),
+            name="MarketDataServiceTask_scheduler",
+        )
+
+        logger.info(
+            "MarketDataService started with interval %s seconds", seconds_parsing
+        )
+
+    async def _run_periodically(self, seconds_parsing: float) -> None:
+        """Runs the parsing task periodically"""
+        while not self._stop_event.is_set():
+            start_time = datetime.now()
+            try:
+                await self.force_parse()
+            except Exception as e:
+                logger.error("Error during parsing: %s", e)
+                await asyncio.sleep(seconds_parsing)
+
+            elapsed_time = (datetime.now() - start_time).total_seconds()
+            sleep_time = max(0, seconds_parsing - elapsed_time)
+            logger.info("Sleeping for %s seconds before next parsing...", sleep_time)
+            try:
+                await asyncio.wait_for(self._stop_event.wait(), timeout=sleep_time)
+            except asyncio.TimeoutError:
+                pass
+
+    async def stop_parsing(self) -> None:
+        """Stops parsing by scheduler"""
+        if not self._is_running:
+            logger.warning("MarketDataService is not running")
+            return
+
+        if self._task:
+            self._task.cancel()
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                logger.info("MarketDataService task cancelled successfully")
+
+        self._is_running = False
+        self._stop_event.set()
+
+        logger.info("MarketDataService stopped")
+
 
 async def main():
     service = MarketDataService()
-    await service.estimate_parse_time()
+    await service.start_parsing()
+    await asyncio.sleep(150)
+    await service.stop_parsing()
 
 
 if __name__ == "__main__":
