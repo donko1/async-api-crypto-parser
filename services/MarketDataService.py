@@ -36,7 +36,13 @@ class MarketDataService:
         self._task: Optional[asyncio.Task] = None
         self.ICONS_UPDATE_LOCK_KEY = "icons:update_lock"
         self._is_running = False
+        self._session: Optional[aiohttp.ClientSession] = None
         self._stop_event = asyncio.Event()
+
+    async def _get_session(self) -> aiohttp.ClientSession:
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession()
+        return self._session
 
     async def _should_update_icons_by_time(self) -> bool:
         """Returns if need update icons by time"""
@@ -61,9 +67,9 @@ class MarketDataService:
 
     async def test_connection(self) -> bool:
         """Returns true if connection is works and false if not"""
-        async with aiohttp.ClientSession() as session:
-            async with session.get("https://coinmarketcap.com/coins/") as response:
-                return response.status == 200
+        session = await self._get_session()
+        async with session.get("https://coinmarketcap.com/coins/") as response:
+            return response.status == 200
 
     async def _playwright_request(self):
         async with async_playwright() as p:
@@ -77,9 +83,9 @@ class MarketDataService:
             return status
 
     async def _aiohttp_request(self):
-        async with aiohttp.ClientSession() as session:
-            async with session.get("https://coinmarketcap.com/coins/") as response:
-                return response.status
+        session = await self._get_session()
+        async with session.get("https://coinmarketcap.com/coins/") as response:
+            return response.status
 
     async def estimate_parse_time(self) -> dict:
         """Calculating how much need to connect with aiohttp and playwright
@@ -215,6 +221,12 @@ class MarketDataService:
         self._stop_event.set()
 
         logger.info("MarketDataService stopped")
+
+    async def close(self) -> None:
+        """Closes all sessions and connections"""
+        logger.info("MarketData service is closing...")
+        await self.redis.aclose()
+        logger.info("MarketData service closed successfully!")
 
 
 async def main():

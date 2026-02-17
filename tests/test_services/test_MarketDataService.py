@@ -3,6 +3,7 @@ import json
 import pytest
 from unittest.mock import ANY, AsyncMock, MagicMock, Mock, patch
 from services.MarketDataService import MarketDataService
+import aiohttp
 
 
 @pytest.mark.network
@@ -314,22 +315,54 @@ async def test_run_periodically_resilient_to_errors(monkeypatch):
     """
     Ensures the loop continues even if force_parse raises an exception.
     """
+
     # Arrange
     service = MarketDataService()
     service._stop_event = asyncio.Event()
-    mock_force_parse = AsyncMock()
 
-    async def mock_behavior():
-        if mock_force_parse.call_count == 1:
+    call_info = {"count": 0}
+
+    async def manual_mock():
+        call_info["count"] += 1
+        if call_info["count"] == 1:
             raise Exception("Parsing failed")
         service._stop_event.set()
-        return None
 
-    mock_force_parse.side_effect = mock_behavior
-    monkeypatch.setattr(service, "force_parse", mock_force_parse)
+    monkeypatch.setattr(service, "force_parse", manual_mock)
 
     # Act
     await service._run_periodically(seconds_parsing=0.001)
 
     # Assert
-    assert mock_force_parse.call_count == 2
+    assert call_info["count"] == 2
+
+
+@pytest.mark.asyncio
+async def test_close_service_closes_redis():
+    """Tests that redis will close at the same time as MarketDataService"""
+
+    # Arrange
+    service = MarketDataService()
+    service.redis = AsyncMock()
+
+    # Act
+    await service.close()
+
+    # Assert
+    service.redis.aclose.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_get_session():
+    """Tests that _get_session method returns aiohttp.ClientSession"""
+
+    # Arrange
+    service = MarketDataService()
+
+    # Act
+    session = await service._get_session()
+    await service.close()  # Ensure we close the session after the test
+
+    # Assert
+    assert isinstance(session, aiohttp.ClientSession)
+    assert not session.closed
