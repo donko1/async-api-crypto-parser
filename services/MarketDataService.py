@@ -226,7 +226,7 @@ class MarketDataService:
         """Closes all sessions and connections"""
         logger.info("MarketData service is closing...")
         await self.redis.aclose()
-        self._session.close() if self._session else None
+        await self._session.close() if self._session else None
         logger.info("MarketData service closed successfully!")
 
 
