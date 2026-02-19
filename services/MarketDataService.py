@@ -157,12 +157,20 @@ class MarketDataService:
         if should_update_by_time or self._should_update_by_lost_icons(
             json_path=json_path
         ):
-            await self.force_update_icons()
+            try:
+                await self.force_update_icons()
+            except Exception as _ex:
+                logger.error(f"force update icons failed: {_ex}")
 
-        await get_html_for_top_100()
-        save_values_to_json(
-            get_values_from_html_to_dict(parse_icons_from_file=True), filepath=json_path
-        )
+        try:
+            await get_html_for_top_100()
+            save_values_to_json(
+                get_values_from_html_to_dict(parse_icons_from_file=True),
+                filepath=json_path,
+            )
+        except Exception as _ex:
+            logger.error(f"force parse failed: {_ex}")
+            return
 
     async def start_parsing(self, seconds_parsing: float | NoneType = None) -> None:
         """Starts parsing by scheduler"""

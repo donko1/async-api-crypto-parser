@@ -179,6 +179,94 @@ async def test_start_parsing_when_already_running(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_force_parse_with_update_icons_fails(monkeypatch):
+    """Tests that force_parse with log an error if update_icons fails"""
+
+    # Arrange
+    service = MarketDataService()
+    mock_logger = Mock()
+
+    monkeypatch.setattr("services.MarketDataService.logger", mock_logger)
+
+    monkeypatch.setattr(service, "_should_update_by_lost_icons", lambda json_path: True)
+
+    monkeypatch.setattr(
+        service,
+        "_should_update_icons_by_time",
+        AsyncMock(return_value=True),
+    )
+
+    async def fail(*args, **kwargs):
+        raise Exception("boom")
+
+    monkeypatch.setattr(service, "force_update_icons", fail)
+
+    monkeypatch.setattr(
+        "services.MarketDataService.get_html_for_top_100",
+        AsyncMock(),
+    )
+    monkeypatch.setattr(
+        "services.MarketDataService.get_values_from_html_to_dict",
+        lambda *a, **k: {},
+    )
+    monkeypatch.setattr(
+        "services.MarketDataService.save_values_to_json",
+        lambda *a, **k: None,
+    )
+
+    # Act
+    await service.force_parse()
+
+    # Assert
+    mock_logger.error.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_force_parse_logs_error_if_get_html_fails(monkeypatch):
+    """Tests that force_parse logs an error if get_html_for_top_100 fails"""
+
+    # Arrange
+    service = MarketDataService()
+    mock_logger = Mock()
+
+    monkeypatch.setattr("services.MarketDataService.logger", mock_logger)
+
+    monkeypatch.setattr(
+        service,
+        "_should_update_icons_by_time",
+        AsyncMock(return_value=False),
+    )
+    monkeypatch.setattr(
+        service,
+        "_should_update_by_lost_icons",
+        lambda json_path: False,
+    )
+
+    async def fail(*args, **kwargs):
+        raise Exception("network boom")
+
+    monkeypatch.setattr(
+        "services.MarketDataService.get_html_for_top_100",
+        fail,
+    )
+
+    monkeypatch.setattr(
+        "services.MarketDataService.get_values_from_html_to_dict",
+        lambda *a, **k: {},
+    )
+    monkeypatch.setattr(
+        "services.MarketDataService.save_values_to_json",
+        lambda *a, **k: None,
+    )
+
+    # Act
+    await service.force_parse()
+
+    # Assert
+    mock_logger.error.assert_called_once()
+
+
+@pytest.mark.asyncio
 async def test_start_parsing_with_custom_interval(monkeypatch):
     """Tests that service starts parsing with a custom interval"""
 
@@ -365,4 +453,4 @@ async def test_get_session():
 
     # Assert
     assert isinstance(session, aiohttp.ClientSession)
-    assert not session.closed
+    assert session.closed
