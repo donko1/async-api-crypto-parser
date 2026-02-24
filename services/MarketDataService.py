@@ -72,20 +72,28 @@ class MarketDataService:
             return response.status == 200
 
     async def _playwright_request(self):
-        async with async_playwright() as p:
-            browser = await p.chromium.launch()
-            page = await browser.new_page()
-            response = await page.goto(
-                "https://coinmarketcap.com/coins/", wait_until="domcontentloaded"
-            )
-            status = response.status
-            await browser.close()
-            return status
+        try:
+            async with async_playwright() as p:
+                browser = await p.chromium.launch()
+                page = await browser.new_page()
+                response = await page.goto(
+                    "https://coinmarketcap.com/coins/", wait_until="domcontentloaded"
+                )
+                status = response.status
+                await browser.close()
+                return status
+        except Exception as _ex:
+            logger.error(f"_playwright_request failed by {_ex}")
+            return 500
 
     async def _aiohttp_request(self):
-        session = await self._get_session()
-        async with session.get("https://coinmarketcap.com/coins/") as response:
-            return response.status
+        try:
+            session = await self._get_session()
+            async with session.get("https://coinmarketcap.com/coins/") as response:
+                return response.status
+        except Exception as _ex:
+            logger.error(f"_aiohttp_request failed by {_ex}")
+            return 500
 
     async def estimate_parse_time(self) -> dict:
         """Calculating how much need to connect with aiohttp and playwright
@@ -130,7 +138,11 @@ class MarketDataService:
             json_path = self.config.ICONS
 
         logger.info("Downloading page with playwright....")
-        await get_html_by_playwright(filepath=html_path)
+        try:
+            await get_html_by_playwright(filepath=html_path)
+        except Exception as _ex:
+            logger.error("Error while opening url with playwright")
+            return
 
         logger.info("Parsing and saving icons...")
         icons_json = parse_icons(filepath=html_path)

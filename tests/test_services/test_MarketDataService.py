@@ -222,6 +222,73 @@ async def test_force_parse_with_update_icons_fails(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_playwright_request_if_failed(monkeypatch):
+    """Tests that if async_playwright doesnt work logger will called"""
+
+    # Arrange
+    service = MarketDataService()
+    mock_logger = Mock()
+
+    monkeypatch.setattr("services.MarketDataService.logger", mock_logger)
+
+    class FailPlaywright:
+        async def __aenter__(self):
+            raise Exception("network boom")
+
+        async def __aexit__(self, exc_type, exc, tb):
+            pass
+
+    monkeypatch.setattr(
+        "services.MarketDataService.async_playwright", lambda: FailPlaywright()
+    )
+
+    # Act
+    out = await service._playwright_request()
+
+    # Assert
+    assert out == 500
+
+    mock_logger.error.assert_called_once_with(
+        "_playwright_request failed by network boom"
+    )
+
+
+@pytest.mark.asyncio
+async def test_aiohttp_request_if_failed(monkeypatch):
+    """Tests that if _aiohttp_request failed with error logger will called"""
+
+    # Arrange
+    service = MarketDataService()
+    mock_logger = Mock()
+
+    monkeypatch.setattr("services.MarketDataService.logger", mock_logger)
+
+    class FailingSession:
+        async def __aenter__(self):
+            raise Exception("network boom")
+
+        async def __aexit__(self, exc_type, exc, tb):
+            pass
+
+    async def fake_get_session():
+        return FailingSession()
+
+    monkeypatch.setattr(
+        service,
+        "_get_session",
+        fake_get_session,
+    )
+
+    # Act
+    out = await service._aiohttp_request()
+
+    # Assert
+    assert out == 500
+
+    mock_logger.error.assert_called_once_with(ANY)  # TODO: remove any from here
+
+
+@pytest.mark.asyncio
 async def test_force_parse_logs_error_if_get_html_fails(monkeypatch):
     """Tests that force_parse logs an error if get_html_for_top_100 fails"""
 
