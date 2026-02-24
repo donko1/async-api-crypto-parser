@@ -264,11 +264,8 @@ async def test_aiohttp_request_if_failed(monkeypatch):
     monkeypatch.setattr("services.MarketDataService.logger", mock_logger)
 
     class FailingSession:
-        async def __aenter__(self):
+        def get(self, *args, **kwargs):
             raise Exception("network boom")
-
-        async def __aexit__(self, exc_type, exc, tb):
-            pass
 
     async def fake_get_session():
         return FailingSession()
@@ -285,7 +282,7 @@ async def test_aiohttp_request_if_failed(monkeypatch):
     # Assert
     assert out == 500
 
-    mock_logger.error.assert_called_once_with(ANY)  # TODO: remove any from here
+    mock_logger.error.assert_called_once_with("_aiohttp_request failed by network boom")
 
 
 @pytest.mark.asyncio
