@@ -7,20 +7,28 @@ from config.settings import config
 class SimpleLogger:
     """Base logger in files and terminal"""
 
-    def __init__(self):
+    def __init__(self, test_mode=False):
         self.config = config
-        self._setup()
+        if "pytest" in sys.modules and not test_mode:
+            test_mode = True
+        self._setup(test_mode=test_mode)
 
-    def _setup(self):
+    def _setup(self, test_mode=False):
         """Base setup"""
 
         logs_dir = Path("logs")
         logs_dir.mkdir(exist_ok=True)
 
-        self.formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
+        if not test_mode:
+            self.formatter = logging.Formatter(
+                "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
+            )
+        else:
+            self.formatter = logging.Formatter(
+                "%(asctime)s - %(name)s - %(levelname)s TESTING - %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
+            )
 
     def get_logger(self, name: str = "app"):
         """Get named logger"""
