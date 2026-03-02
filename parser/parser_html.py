@@ -24,6 +24,8 @@ def get_values_from_html_to_dict(
         with open(icons_path) as f:
             icons = json.load(f)
 
+    counter_lost = 0
+
     for i, tr in enumerate(trs):
         try:
             name = f"{tr.css('td')[2].css("span")[1].text()}"
@@ -44,13 +46,24 @@ def get_values_from_html_to_dict(
             except:
                 icon = ""
 
+        try:
+            change_1hr = (
+                float(tr.css(".icon-Caret-up")[0].parent.text().replace("%", "")) / 100
+            )
+        except:
+            counter_lost += 1
+            change_1hr = 0
+
         out[ticker] = {
             "ticker": ticker,
             "price": price,
             "name": name,
             "icon": icon,
             "id": i,
+            "change_1hr": change_1hr,
         }
+
+    logger.info(f"change_1hr was lost {counter_lost}")
 
     return out
 

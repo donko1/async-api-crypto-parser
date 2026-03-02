@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from unittest.mock import Mock
 
 from parser.parser_html import (
     get_values_from_html_to_dict,
@@ -80,3 +81,21 @@ def test_lost_icons():
     result = lost_icons_count(filepath=html_path)
 
     assert 3 == result
+
+
+def test_parse_html_lost_change_1hr(monkeypatch):
+    # Arrange
+    html_path = Path(__file__).parent.parent / "fixtures" / "combination_values.html"
+
+    mock_logger = Mock()
+
+    monkeypatch.setattr("parser.parser_html.logger", mock_logger)
+
+    # Act
+    result = get_values_from_html_to_dict(filepath=html_path)
+
+    # Assert
+    mock_logger.info.assert_called_with("change_1hr was lost 6")
+
+    assert result["NVDA"]["change_1hr"] == 0
+    assert result["TSLA"]["change_1hr"] == 0.25
