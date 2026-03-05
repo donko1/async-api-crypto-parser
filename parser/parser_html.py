@@ -63,7 +63,8 @@ def get_values_from_html_to_dict(
             "change_1hr": change_1hr,
         }
 
-    logger.info(f"change_1hr was lost {counter_lost}")
+    if counter_lost > 0:
+        logger.info(f"change_1hr was lost {counter_lost}")
 
     return out
 

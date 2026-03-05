@@ -99,3 +99,21 @@ def test_parse_html_lost_change_1hr(monkeypatch):
 
     assert result["NVDA"]["change_1hr"] == 0
     assert result["TSLA"]["change_1hr"] == 0.25
+
+
+def test_parse_html_with_all_1hr(monkeypatch):
+    # Arrange
+    html_path = Path(__file__).parent.parent / "fixtures" / "all_changed_1hr.html"
+
+    mock_logger = Mock()
+
+    monkeypatch.setattr("parser.parser_html.logger", mock_logger)
+
+    # Act
+    result = get_values_from_html_to_dict(filepath=html_path)
+
+    # Assert
+    mock_logger.assert_not_called()
+
+    assert result["AMZN"]["change_1hr"] == 5 / 100
+    assert result["MSFT"]["change_1hr"] == 10 / 100
