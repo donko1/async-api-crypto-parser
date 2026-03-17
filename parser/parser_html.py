@@ -7,6 +7,18 @@ from core.logger import get_logger
 logger = get_logger("parser_html")
 
 
+def get_price_in_value(elem, value=None):
+    value_convert = {"USD": -1, "ETH": -2, "BTC": -3}
+
+    if value is None:
+        value = "USD"
+
+    if value not in value_convert.keys():
+        raise Exception("This value doesnt available")
+
+    return elem["quotes"][value_convert[value]]
+
+
 def get_values_from_html_to_dict(
     filepath=config.HTML_PATH, parse_icons_from_file=False, icons_path=config.ICONS
 ):
@@ -17,6 +29,13 @@ def get_values_from_html_to_dict(
     trs = tree.css("tr")[2::]
 
     out = {}
+
+    # json_data = json.loads(tree.css_first("script#__NEXT_DATA__").text())["props"][
+    #     "dehydratedState"
+    # ]["queries"][2]["state"]["data"]["data"]["listing"]["cryptoCurrencyList"]
+
+    # with open("json_cache/all_coins_data.json", "w") as f:
+    #     json.dump(json_data, f)
 
     logger.info(f"Found {len(trs)} tr's...")
 

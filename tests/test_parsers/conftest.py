@@ -1,0 +1,86 @@
+import pytest
+
+
+@pytest.fixture
+def some_coin_data():
+    return {"quotes": [{"price": 42}, {"price": 69}, {"price": 52}]}
+
+
+@pytest.fixture
+def coin_data_expanded():
+    return {
+        "quotes": [
+            {
+                "name": "BTC",
+                "price": 0.0005,
+                "volume24h": 7.124,
+                "volume7d": 42.74,
+                "volumePercentChange": -15.5,
+                "volume30d": 171.0,
+                "marketCap": 142.5,
+                "selfReportedMarketCap": 0,
+                "percentChange1h": 0.2,
+                "percentChange24h": 2.5,
+                "percentChange7d": 5.0,
+                "lastUpdated": "2026-03-06T12:04:00.000Z",
+                "percentChange30d": 15.0,
+                "percentChange60d": 20.0,
+                "percentChange90d": 25.0,
+                "fullyDilluttedMarketCap": 171.0,
+                "marketCapByTotalSupply": 142.5,
+                "dominance": 0.05,
+                "turnover": 0.05,
+                "ytdPriceChangePercentage": 50.0,
+                "percentChange1y": 80.0,
+            },
+            {
+                "name": "ETH",
+                "price": 0.017105,
+                "volume24h": 243.7,
+                "volume7d": 1462.5,
+                "volumePercentChange": -15.5,
+                "volume30d": 5849.9,
+                "marketCap": 4874.0,
+                "selfReportedMarketCap": 0,
+                "percentChange1h": 0.2,
+                "percentChange24h": 2.5,
+                "percentChange7d": 5.0,
+                "lastUpdated": "2026-03-06T12:04:00.000Z",
+                "percentChange30d": 15.0,
+                "percentChange60d": 20.0,
+                "percentChange90d": 25.0,
+                "fullyDilluttedMarketCap": 5850.0,
+                "marketCapByTotalSupply": 4874.0,
+                "dominance": 0.05,
+                "turnover": 0.05,
+                "ytdPriceChangePercentage": 50.0,
+                "percentChange1y": 80.0,
+            },
+            {
+                "name": "USD",
+                "price": 35.092,
+                "volume24h": 500000.0,
+                "volume7d": 3000000.0,
+                "volumePercentChange": -15.5,
+                "volume30d": 12000000.0,
+                "marketCap": 10000000.0,
+                "selfReportedMarketCap": 0,
+                "percentChange1h": 0.2,
+                "percentChange24h": 2.5,
+                "percentChange7d": 5.0,
+                "lastUpdated": "2026-03-06T12:04:00.000Z",
+                "percentChange30d": 15.0,
+                "percentChange60d": 20.0,
+                "percentChange90d": 25.0,
+                "fullyDilluttedMarketCap": 12000000.0,
+                "marketCapByTotalSupply": 10000000.0,
+                "dominance": 0.05,
+                "turnover": 0.05,
+                "ytdPriceChangePercentage": 50.0,
+                "percentChange1y": 80.0,
+            },
+        ],
+        "isAudited": False,
+        "auditInfoList": [],
+        "badges": [1, 5],
+    }
