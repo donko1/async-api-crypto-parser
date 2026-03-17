@@ -30,13 +30,6 @@ def get_values_from_html_to_dict(
 
     out = {}
 
-    # json_data = json.loads(tree.css_first("script#__NEXT_DATA__").text())["props"][
-    #     "dehydratedState"
-    # ]["queries"][2]["state"]["data"]["data"]["listing"]["cryptoCurrencyList"]
-
-    # with open("json_cache/all_coins_data.json", "w") as f:
-    #     json.dump(json_data, f)
-
     logger.info(f"Found {len(trs)} tr's...")
 
     if parse_icons_from_file and os.path.exists(icons_path):
