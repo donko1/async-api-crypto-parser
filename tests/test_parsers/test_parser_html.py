@@ -1,11 +1,12 @@
 from datetime import datetime
 import json
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, mock_open
 
 import pytest
 
 from parser.parser_html import (
+    find_elem_by_ticker,
     get_price_in_value,
     get_values_from_html_to_dict,
     save_values_to_json,
@@ -18,7 +19,9 @@ from tests.test_parsers.conftest import some_coin_data
 def test_parse_html_to_dict_with_p():
     html_path = Path(__file__).parent.parent / "fixtures" / "p_values.html"
 
-    result = get_values_from_html_to_dict(filepath=html_path)
+    result = get_values_from_html_to_dict(
+        filepath=html_path, skipping_json_expanded_data=True
+    )
 
     assert isinstance(result, dict)
     assert len(result) == 7
@@ -32,7 +35,9 @@ def test_parse_html_to_dict_with_p():
 def test_parse_html_to_dict_with_span():
     html_path = Path(__file__).parent.parent / "fixtures" / "span_values.html"
 
-    result = get_values_from_html_to_dict(filepath=html_path)
+    result = get_values_from_html_to_dict(
+        filepath=html_path, skipping_json_expanded_data=True
+    )
 
     assert isinstance(result, dict)
     assert len(result) == 7
@@ -46,7 +51,9 @@ def test_parse_html_to_dict_with_span():
 def test_parse_html_to_dict_combination():
     html_path = Path(__file__).parent.parent / "fixtures" / "combination_values.html"
 
-    result = get_values_from_html_to_dict(filepath=html_path)
+    result = get_values_from_html_to_dict(
+        filepath=html_path, skipping_json_expanded_data=True
+    )
 
     assert isinstance(result, dict)
     assert len(result) == 7
@@ -97,7 +104,9 @@ def test_parse_html_lost_change_1hr(monkeypatch):
     monkeypatch.setattr("parser.parser_html.logger", mock_logger)
 
     # Act
-    result = get_values_from_html_to_dict(filepath=html_path)
+    result = get_values_from_html_to_dict(
+        filepath=html_path, skipping_json_expanded_data=True
+    )
 
     # Assert
     mock_logger.info.assert_called_with("change_1hr was lost 6")
@@ -115,7 +124,9 @@ def test_parse_html_with_all_1hr(monkeypatch):
     monkeypatch.setattr("parser.parser_html.logger", mock_logger)
 
     # Act
-    result = get_values_from_html_to_dict(filepath=html_path)
+    result = get_values_from_html_to_dict(
+        filepath=html_path, skipping_json_expanded_data=True
+    )
 
     # Assert
     mock_logger.assert_not_called()
@@ -190,3 +201,73 @@ def test_get_price_in_value_correct(coin_data_expanded):
     assert datetime_object.year == 2026
     assert datetime_object.month == 3
     assert datetime_object.day == 6
+
+
+def test_find_elem_by_id(coins_data):
+    # Arrange
+    data = coins_data
+
+    # Act
+    BTC = find_elem_by_ticker(data, "BTC")
+
+    # Assert
+    assert BTC["id"] == 1
+    assert BTC["name"] == "Bitcoin"
+
+
+def test_skipping_json_expanded_data_param_true(monkeypatch):
+    # Arrange
+    json_mock = Mock()
+    monkeypatch.setattr("parser.parser_html.json", json_mock)
+
+    mock_tree = Mock()
+    mock_tree.css.return_value = []
+    mock_tree.css_first.return_value = Mock()
+    mock_html_parser = Mock(return_value=mock_tree)
+    monkeypatch.setattr("parser.parser_html.HTMLParser", mock_html_parser)
+
+    monkeypatch.setattr("builtins.open", mock_open())
+
+    # Act
+    get_values_from_html_to_dict(skipping_json_expanded_data=True)
+
+    # Assert
+    json_mock.loads.assert_not_called()
+    json_mock.dump.assert_not_called()
+
+
+def test_skipping_json_expanded_data_param_false(monkeypatch):
+    # Arrange
+    json_mock = Mock()
+    json_mock.loads.return_value = {
+        "props": {
+            "dehydratedState": {
+                "queries": [
+                    None,
+                    None,
+                    {
+                        "state": {
+                            "data": {"data": {"listing": {"cryptoCurrencyList": []}}}
+                        }
+                    },
+                ]
+            }
+        }
+    }
+    monkeypatch.setattr("parser.parser_html.json", json_mock)
+
+    mock_tree = Mock()
+    mock_tree.css.return_value = []
+
+    script_mock = Mock()
+    script_mock.text.return_value = "{}"
+    mock_tree.css_first.return_value = script_mock
+
+    monkeypatch.setattr("parser.parser_html.HTMLParser", Mock(return_value=mock_tree))
+    monkeypatch.setattr("builtins.open", mock_open())
+
+    # Act
+    get_values_from_html_to_dict(skipping_json_expanded_data=False)
+
+    # Assert
+    assert json_mock.loads.called

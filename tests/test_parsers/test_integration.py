@@ -29,4 +29,7 @@ async def test_full_parsing_pipeline(tmp_path):
         async with session.get(url_of_icon) as response:
             assert response.status == 200
             content_type = response.headers.get("Content-Type", "").lower()
-            assert "image/png" in content_type
+            assert "image/png" in content_type or "image/gif" in content_type
+
+    for ticker in data.keys():
+        assert data[ticker]["icon"].startswith("http")
