@@ -22,6 +22,7 @@ class Config:
     REDIS_HOST: str
     REDIS_PORT: int
     SCHEDULER_AUTOUPDATE_SECONDS: int
+    FILEPATH_EXCEL: str
 
     @classmethod
     def load(cls) -> "Config":
@@ -59,6 +60,7 @@ class Config:
             SCHEDULER_AUTOUPDATE_SECONDS=int(
                 os.getenv("SCHEDULER_AUTOUPDATE_SECONDS", "600")
             ),
+            FILEPATH_EXCEL=str(os.getenv("FILEPATH_EXCEL", "")),
         )
 
     def log_config(self):
@@ -72,6 +74,7 @@ class Config:
             "ICONS_STORAGE_SECONDS": self.ICONS_STORAGE_SECONDS,
             "MINIMUM_LOST_ICONS": self.MINIMUM_LOST_ICONS,
             "SCHEDULER_AUTOUPDATE_SECONDS": self.SCHEDULER_AUTOUPDATE_SECONDS,
+            "FILEPATH_EXCEL": self.FILEPATH_EXCEL,
         }
         print(f"App config loaded: {safe_config}")
 
