@@ -97,7 +97,10 @@ def test_client__get_letter_for_keys(valid_client_excel, abcd_keys, abcdef_keys)
 
 def test_client_write_correct_mapping(mock_excel_client_self):
     # Arrange
-    data = {"user_ids": [101, 102], "status": ["active", "pending"]}
+    data = {
+        "row_1": {"user_ids": 101, "status": "active"},
+        "row_2": {"user_ids": 102, "status": "pending"},
+    }
 
     mapping = {"A": "user_ids", "B": "status"}
 
@@ -119,7 +122,7 @@ def test_client_write_correct_mapping(mock_excel_client_self):
 
 def test_client_write_empty_list_for_key(mock_excel_client_self):
     # Arrange
-    data = {"empty_key": []}
+    data = {}
     mapping = {"B": "empty_key"}
 
     # Act

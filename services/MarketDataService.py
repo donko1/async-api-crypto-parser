@@ -10,6 +10,7 @@ import playwright
 from playwright.async_api import async_playwright
 from redis.asyncio import Redis
 from config.settings import Config
+from core.excel_client import ExcelClient
 from parser.parser_html import (
     get_values_from_html_to_dict,
     lost_icons_count,
@@ -38,6 +39,22 @@ class MarketDataService:
         self._is_running = False
         self._session: Optional[aiohttp.ClientSession] = None
         self._stop_event = asyncio.Event()
+
+        try:
+            self.excel_client = ExcelClient(filepath=self.config.FILEPATH_EXCEL)
+            self.can_write_in_excel = True
+        except Exception as e:
+            logger.error("Error while initializing excel client: %s", e)
+            self.can_write_in_excel = False
+
+    def _get_data(self) -> dict:
+        """Getting data from json file"""
+        if os.path.exists(self.config.JSON_PATH):
+            with open(self.config.JSON_PATH, "r") as f:
+                return get_values_from_html_to_dict(parse_icons_from_file=True)
+        else:
+            logger.warning(f"Json file {self.config.JSON_PATH} does not exist!")
+            return {}
 
     async def _get_session(self) -> aiohttp.ClientSession:
         if self._session is None or self._session.closed:
@@ -184,7 +201,9 @@ class MarketDataService:
             logger.error(f"force parse failed: {_ex}")
             return
 
-    async def start_parsing(self, seconds_parsing: float | NoneType = None) -> None:
+    async def start_parsing(
+        self, seconds_parsing: float | NoneType = None, writing_in_excel: bool = False
+    ) -> None:
         """Starts parsing by scheduler"""
         if self._is_running:
             logger.warning("MarketDataService is already running")
@@ -198,7 +217,7 @@ class MarketDataService:
         self._stop_event.clear()
 
         self._task = asyncio.create_task(
-            self._run_periodically(seconds_parsing),
+            self._run_periodically(seconds_parsing, writing_in_excel=writing_in_excel),
             name="MarketDataServiceTask_scheduler",
         )
 
@@ -206,7 +225,9 @@ class MarketDataService:
             "MarketDataService started with interval %s seconds", seconds_parsing
         )
 
-    async def _run_periodically(self, seconds_parsing: float) -> None:
+    async def _run_periodically(
+        self, seconds_parsing: float, writing_in_excel: bool = False
+    ) -> None:
         """Runs the parsing task periodically"""
         while not self._stop_event.is_set():
             start_time = datetime.now()
@@ -219,6 +240,27 @@ class MarketDataService:
             elapsed_time = (datetime.now() - start_time).total_seconds()
             sleep_time = max(0, seconds_parsing - elapsed_time)
             logger.info("Sleeping for %s seconds before next parsing...", sleep_time)
+            if writing_in_excel and self.can_write_in_excel:
+                logger.info("Writing values to excel...")
+                try:
+                    self.excel_client.open()
+                    data = self._get_data()
+                    columns_by_keys = self.excel_client._get_letter_for_keys(
+                        self.excel_client._get_keys_from_dict(data)
+                    )
+                    self.excel_client.write_with_columns_by_key(
+                        data=data, columns_by_keys=columns_by_keys
+                    )
+                    self.excel_client.close()
+                    logger.info("Values were written to excel successfully!")
+                except Exception as e:
+                    logger.error("Error while writing to excel file: %s", e)
+
+            if writing_in_excel and not self.can_write_in_excel:
+                logger.warning(
+                    "Cannot write in excel because excel client was not initialized successfully"
+                )
+
             try:
                 await asyncio.wait_for(self._stop_event.wait(), timeout=sleep_time)
             except asyncio.TimeoutError:
@@ -252,7 +294,7 @@ class MarketDataService:
 
 async def main():
     service = MarketDataService()
-    await service.start_parsing()
+    await service.start_parsing(writing_in_excel=True)
     await asyncio.sleep(150)
     await service.stop_parsing()
 

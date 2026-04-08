@@ -63,14 +63,16 @@ class ExcelClient:
         return out_d
 
     def write_with_columns_by_key(self, data: dict, columns_by_keys: dict):
+
         if not isinstance(data, dict):
             raise TypeError("Data must be a dictionary!")
         if not isinstance(columns_by_keys, dict):
             raise TypeError("Columns by keys must be a dictionary!")
 
-        for column, key in columns_by_keys.items():
-            for row, value in enumerate(data[key], start=1):
-                self.workbook.active[f"{column}{row}"] = value
+        for row_index, crypto_data in enumerate(data.values(), start=1):
+            for column, key in columns_by_keys.items():
+                value = crypto_data.get(key, "")
+                self.workbook.active[f"{column}{row_index}"] = value
 
     def generate_columns_by_keys(self, data: dict):
         if not isinstance(data, dict):

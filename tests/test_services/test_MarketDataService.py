@@ -355,7 +355,9 @@ async def test_start_parsing_with_custom_interval(monkeypatch):
     assert service._is_running is True
     service._stop_event.clear.assert_called_once()
 
-    service._run_periodically.assert_called_once_with(custom_interval)
+    service._run_periodically.assert_called_once_with(
+        custom_interval, writing_in_excel=ANY
+    )
 
     mock_create_task.assert_called_once_with(
         ANY,
