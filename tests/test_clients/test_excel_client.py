@@ -105,7 +105,9 @@ def test_client_write_correct_mapping(mock_excel_client_self):
     mapping = {"A": "user_ids", "B": "status"}
 
     # Act
-    ExcelClient.write_with_columns_by_key(mock_excel_client_self, data, mapping)
+    ExcelClient.write_with_columns_by_key(
+        mock_excel_client_self, data, mapping, header=False
+    )
 
     # Asserting getting error if data arg is not dict
     with pytest.raises(TypeError, match="Data must be a dictionary!"):
@@ -126,7 +128,9 @@ def test_client_write_empty_list_for_key(mock_excel_client_self):
     mapping = {"B": "empty_key"}
 
     # Act
-    ExcelClient.write_with_columns_by_key(mock_excel_client_self, data, mapping)
+    ExcelClient.write_with_columns_by_key(
+        mock_excel_client_self, data, mapping, header=False
+    )
 
     # Assert
     assert len(mock_excel_client_self.workbook.active) == 0

@@ -62,17 +62,24 @@ class ExcelClient:
         logger.info(f"Generated columns for keys: {out_d}")
         return out_d
 
-    def write_with_columns_by_key(self, data: dict, columns_by_keys: dict):
+    def write_with_columns_by_key(
+        self, data: dict, columns_by_keys: dict, header: bool = True
+    ):
 
         if not isinstance(data, dict):
             raise TypeError("Data must be a dictionary!")
         if not isinstance(columns_by_keys, dict):
             raise TypeError("Columns by keys must be a dictionary!")
 
+        if header:
+            for column, key in columns_by_keys.items():
+                self.workbook.active[f"{column}1"] = key
+
         for row_index, crypto_data in enumerate(data.values(), start=1):
             for column, key in columns_by_keys.items():
                 value = crypto_data.get(key, "")
-                self.workbook.active[f"{column}{row_index}"] = value
+                index = row_index + 1 if header else row_index
+                self.workbook.active[f"{column}{index}"] = value
 
     def generate_columns_by_keys(self, data: dict):
         if not isinstance(data, dict):
@@ -84,3 +91,19 @@ class ExcelClient:
     def close(self):
         logger.info("Close workbook...")
         self.workbook.save(self.filepath)
+
+
+def main():
+    client = ExcelClient()
+    client.open()
+    data = {
+        "BTC": {"price": 50000, "volume": 1000},
+        "ETH": {"price": 4000, "volume": 500},
+    }
+    columns_by_keys = client.generate_columns_by_keys(data)
+    client.write_with_columns_by_key(data, columns_by_keys)
+    client.close()
+
+
+if __name__ == "__main__":
+    main()
