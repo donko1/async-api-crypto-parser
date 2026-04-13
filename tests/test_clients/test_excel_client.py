@@ -151,3 +151,30 @@ def test_client_generate_columns_success(mock_excel_client_self, diff_keys):
     assert result == expected_columns
     mock_excel_client_self._get_keys_from_dict.assert_called_once_with(diff_keys)
     mock_excel_client_self._get_letter_for_keys.assert_called_once_with(expected_keys)
+
+
+def test_client_write_with_header(mock_excel_client_self):
+    # Arrange
+    data = {
+        "btc": {"name": "Bitcoin", "price": 50000},
+        "eth": {"name": "Ethereum", "price": 3000},
+    }
+
+    columns_by_keys = {
+        "A": "name",
+        "B": "price",
+    }
+
+    # Act
+    ExcelClient.write_with_columns_by_key(
+        mock_excel_client_self, data, columns_by_keys, header=True
+    )
+
+    # Assert
+    assert mock_excel_client_self.workbook.active["A1"] == "name"
+    assert mock_excel_client_self.workbook.active["B1"] == "price"
+
+    assert mock_excel_client_self.workbook.active["A2"] == "Bitcoin"
+    assert mock_excel_client_self.workbook.active["B2"] == 50000
+    assert mock_excel_client_self.workbook.active["A3"] == "Ethereum"
+    assert mock_excel_client_self.workbook.active["B3"] == 3000
