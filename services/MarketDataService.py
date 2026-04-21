@@ -231,6 +231,9 @@ class MarketDataService:
         """Runs the parsing task periodically"""
         while not self._stop_event.is_set():
             start_time = datetime.now()
+
+            self.next_run_at = datetime.now() + timedelta(seconds=seconds_parsing)
+
             try:
                 await self.force_parse()
             except Exception as e:
@@ -266,6 +269,18 @@ class MarketDataService:
             except asyncio.TimeoutError:
                 pass
 
+    @property
+    def time_until_next_parse(self) -> float:
+        """
+        Every time called calculating difference between
+        planed time and now
+        """
+        if not hasattr(self, "next_run_at"):
+            return 0.0
+
+        remaining = (self.next_run_at - datetime.now()).total_seconds()
+        return max(0.0, remaining)
+
     async def stop_parsing(self) -> None:
         """Stops parsing by scheduler"""
         if not self._is_running:
@@ -283,6 +298,18 @@ class MarketDataService:
         self._stop_event.set()
 
         logger.info("MarketDataService stopped")
+
+    def get_status(self) -> dict:
+        """Returning status of running parser"""
+        logger.info("Requested for status...")
+        running = self._is_running
+        next_parse = self.time_until_next_parse
+        return {
+            "opened": True,
+            "running": running,
+            "next_parse": next_parse,
+            "status": "OK",
+        }
 
     async def close(self) -> None:
         """Closes all sessions and connections"""

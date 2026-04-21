@@ -2,6 +2,8 @@ import asyncio
 import json
 import pytest
 from unittest.mock import ANY, AsyncMock, MagicMock, Mock, patch
+from datetime import datetime, timedelta
+from freezegun import freeze_time
 from services.MarketDataService import MarketDataService
 import aiohttp
 
@@ -520,3 +522,43 @@ async def test_get_session():
     # Assert
     assert isinstance(session, aiohttp.ClientSession)
     assert session.closed
+
+
+@pytest.mark.asyncio
+def test_get_status():
+    """TESTS THAT get_status method works correctly"""
+
+    # Arrange
+    service = MarketDataService()
+
+    # Act
+    status = service.get_status()
+    service._is_running = True
+    status_is_running_True = service.get_status()
+
+    # Assert
+    assert isinstance(status, dict)
+    assert status["opened"] == True
+    assert status["running"] == False
+    assert status["status"] == "OK"
+    assert status_is_running_True["running"] == True
+
+
+@pytest.mark.asyncio
+async def test_get_status_next_parse():
+    # Arrange
+    service = MarketDataService()
+
+    start_time = datetime(2026, 4, 20, 10, 0, 0)
+    with freeze_time(start_time):
+        service.next_run_at = start_time + timedelta(minutes=1)
+
+        # Act
+        status = service.get_status()
+
+        # Assert
+        assert status["next_parse"] == 60.0
+
+    with freeze_time(start_time + timedelta(minutes=2)):
+        status_after = service.get_status()
+        assert status_after["next_parse"] == 0.0
