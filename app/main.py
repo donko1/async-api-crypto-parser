@@ -1,3 +1,5 @@
+from re import L
+
 from fastapi import FastAPI
 
 from services.MarketDataService import MarketDataService
@@ -29,3 +31,7 @@ async def stop_parser():
 @app.get("/status")
 async def status_parser():
     return parser_service.get_status()
+
+
+# @app.post()
+# async def change_env_value():
