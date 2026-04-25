@@ -85,33 +85,62 @@ class SettingsManager:
         )
 
     def _load_from_json(self) -> dict:
-        with open(self.path, "r") as f:
-            return json.load(f)
+        if os.path.exists(self.path):
+            with open(self.path, "r") as f:
+                return json.load(f)
+        else:
+            return {}
 
     def _ensure_redis_filled(self):
         if not self.redis.exists(self.REDIS_KEY):
             data = self._load_from_json()
-            filtered = {k: v for k, v in data.items() if k in self.ALLOWED_KEYS}
+            filtered = {k: str(v) for k, v in data.items() if k in self.ALLOWED_KEYS}
             if filtered:
                 self.redis.hset(self.REDIS_KEY, mapping=filtered)
+
+    def _cast_value(self, value):
+        """Method to cast string values from Redis to appropriate types (bool, int, float)"""
+        if value is None:
+            return None
+
+        if value == "True":
+            return True
+        if value == "False":
+            return False
+
+        try:
+            if "." in value:
+                return float(value)
+            return int(value)
+        except (ValueError, TypeError):
+            return value
 
     def get(self, key: str, default: any = None) -> any:
         if key not in self.ALLOWED_KEYS:
             raise ValueError(f"Unknown setting: {key}")
         self._ensure_redis_filled()
         value = self.redis.hget(self.REDIS_KEY, key)
-        return value if value is not None else default
+
+        return self._cast_value(value) if value is not None else default
 
     def get_all(self) -> dict:
         self._ensure_redis_filled()
-        return self.redis.hgetall(self.REDIS_KEY)
+        raw_data = self.redis.hgetall(self.REDIS_KEY)
+        return {
+            k.decode() if isinstance(k, bytes) else k: self._cast_value(
+                v.decode() if isinstance(v, bytes) else v
+            )
+            for k, v in raw_data.items()
+        }
 
     def set(self, key: str, value: any):
         if key not in self.ALLOWED_KEYS:
             raise ValueError(f"Unknown setting: {key}")
-        self.redis.hset(self.REDIS_KEY, key, value)
+        self.redis.hset(self.REDIS_KEY, key, str(value))
 
 
 config = Config.load()
+settings_manager = SettingsManager()
 if __name__ == "__main__":
     config.log_config()
+    print(settings_manager.get_all())
