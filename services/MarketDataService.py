@@ -9,7 +9,7 @@ import aiohttp
 import playwright
 from playwright.async_api import async_playwright
 from redis.asyncio import Redis
-from config.settings import Config
+from config.settings import Config, SettingsManager
 from core.excel_client import ExcelClient
 from parser.parser_html import (
     get_values_from_html_to_dict,
@@ -28,6 +28,7 @@ class MarketDataService:
         if config is None:
             config = Config.load()
         self.config = config
+        self.settings = SettingsManager()
         self.redis = Redis(
             host=self.config.REDIS_HOST,
             port=self.config.REDIS_PORT,
@@ -41,7 +42,7 @@ class MarketDataService:
         self._stop_event = asyncio.Event()
 
         try:
-            self.excel_client = ExcelClient(filepath=self.config.FILEPATH_EXCEL)
+            self.excel_client = ExcelClient(filepath=self.config.get("FILEPATH_EXCEL"))
             self.can_write_in_excel = True
         except Exception as e:
             logger.error("Error while initializing excel client: %s", e)
@@ -63,7 +64,7 @@ class MarketDataService:
 
     async def _should_update_icons_by_time(self) -> bool:
         """Returns if need update icons by time"""
-        if self.config.ICONS_BY_TIME_UPDATE:
+        if self.settings.get("ICONS_BY_TIME_UPDATE"):
             if not await self.redis.exists(self.ICONS_UPDATE_LOCK_KEY):
                 logger.info("_should_update_icons_by_time returns True...")
                 return True
@@ -74,7 +75,7 @@ class MarketDataService:
         if json_path is None:
             json_path = self.config.ICONS
         if os.path.exists(json_path):
-            if lost_icons_count(json_path) >= self.config.MINIMUM_LOST_ICONS:
+            if lost_icons_count(json_path) >= self.settings.get("MINIMUM_LOST_ICONS"):
                 logger.info("_should_update_by_lost_icons returns True...")
                 return True
         else:
@@ -163,12 +164,12 @@ class MarketDataService:
 
         logger.info("Parsing and saving icons...")
         icons_json = parse_icons(filepath=html_path)
-        if self.config.ICONS_BY_TIME_UPDATE:
+        if self.settings.get("ICONS_BY_TIME_UPDATE"):
             logger.info("Writing update time in redis...")
             await self.redis.set(
                 self.ICONS_UPDATE_LOCK_KEY,
                 1,
-                ex=self.config.ICONS_STORAGE_SECONDS,
+                ex=self.settings.get("ICONS_STORAGE_SECONDS"),
                 nx=True,
             )
 
@@ -210,7 +211,7 @@ class MarketDataService:
             return
 
         if seconds_parsing is None:
-            seconds_parsing = self.config.SCHEDULER_AUTOUPDATE_SECONDS
+            seconds_parsing = self.settings.get("SCHEDULER_AUTOUPDATE_SECONDS")
 
         self._is_running = True
 
@@ -246,6 +247,17 @@ class MarketDataService:
             if writing_in_excel and self.can_write_in_excel:
                 logger.info("Writing values to excel...")
                 try:
+                    if (
+                        self.settings.get("FILEPATH_EXCEL")
+                        != self.excel_client.filepath
+                    ):
+                        logger.info(
+                            "Excel filepath changed, reinitializing excel client..."
+                        )
+                        self.excel_client.close()
+                        self.excel_client = ExcelClient(
+                            filepath=self.settings.get("FILEPATH_EXCEL")
+                        )
                     self.excel_client.open()
                     data = self._get_data()
                     columns_by_keys = self.excel_client._get_letter_for_keys(
