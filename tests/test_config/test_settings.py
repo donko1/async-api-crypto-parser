@@ -19,14 +19,14 @@ def test_get_invalid_key(settings_manager):
 
 
 def test_ensure_redis_filled_when_empty(settings_manager, mock_redis):
-    # Мокаем чтение JSON файла
     json_data = {"FILEPATH_EXCEL": "data.xlsx", "OTHER": "ignore"}
     mock_redis.exists.return_value = False
 
-    with patch("builtins.open", mock_open(read_data=json.dumps(json_data))):
+    with patch("builtins.open", mock_open(read_data=json.dumps(json_data))), patch(
+        "os.path.exists", return_value=True
+    ):
         settings_manager._ensure_redis_filled()
 
-    # Проверяем, что hset был вызван только с допустимым ключом
     mock_redis.hset.assert_called_with(
         "ap:settings", mapping={"FILEPATH_EXCEL": "data.xlsx"}
     )
@@ -34,8 +34,9 @@ def test_ensure_redis_filled_when_empty(settings_manager, mock_redis):
 
 def test_set_value(settings_manager, mock_redis):
     settings_manager.set("SCHEDULER_AUTOUPDATE_SECONDS", 60)
+
     mock_redis.hset.assert_called_with(
-        "ap:settings", "SCHEDULER_AUTOUPDATE_SECONDS", 60
+        "ap:settings", "SCHEDULER_AUTOUPDATE_SECONDS", "60"
     )
 
 

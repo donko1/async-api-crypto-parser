@@ -1,5 +1,3 @@
-from re import L
-
 from config.settings import SettingsManager
 from fastapi import FastAPI
 

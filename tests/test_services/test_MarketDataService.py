@@ -53,8 +53,8 @@ async def test_force_parse(tmp_path):
 @pytest.mark.asyncio
 async def test_should_update_icons_by_time_true():
     service = MarketDataService()
-    service.config = Mock()
-    service.config.ICONS_BY_TIME_UPDATE = True
+    service.settings = Mock()
+    service.settings.get.return_value = True
 
     service.redis = Mock()
     service.redis.exists = AsyncMock(return_value=False)
